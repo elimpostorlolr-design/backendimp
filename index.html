@@ -174,28 +174,40 @@ customInput.addEventListener('keydown', e=>{
   if(e.key==='Enter') confirmBtn.click();
 });
 
-function goNext(){
+async function goNext(){
   const items=[...document.querySelectorAll('#players li')]
     .map(li => li.querySelector('span').textContent);
-  const params=new URLSearchParams();
-  params.set('players',JSON.stringify(items));
+  if(items.length === 0) return alert('Agregá jugadores');
 
   const modo = modeSwitch.checked ? 'custom' : 'random';
+  let wordVal = null;
 
-  if(modo==='custom'){
-    params.set('word', customInput.value.trim());
-    window.location.href='cartas.html?'+params.toString();
-  } else {
-    fetch('palabras.php')
-      .then(r=>r.text())
-      .then(word=>{
-        params.set('word', word.trim());
-        window.location.href='cartas.html?'+params.toString();
-      })
-      .catch(()=>{
-        params.set('word','ERROR');
-        window.location.href='cartas.html?'+params.toString();
-      });
+  if(modo === 'custom'){
+    wordVal = customInput.value.trim();
+    if(!wordVal) return alert('Falta palabra');
+  }
+
+  const hostName = items[0];
+
+  const resp = await fetch('/api/create-room', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      hostName,
+      mode: modo,
+      word: wordVal
+    })
+  });
+
+  const data = await resp.json();
+  if(!data.ok) return alert('Error creando sala');
+
+  const params = new URLSearchParams();
+  params.set('id', data.id);
+  params.set('name', hostName);
+
+  window.location.href = 'lobby.html?' + params.toString();
+}
   }
 }
 </script>
