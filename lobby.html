@@ -1,1 +1,69 @@
-lobby.html
+<!doctype html><html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lobby</title>
+<style>
+body{background:#111;color:#fff;font-family:system-ui;padding:20px}
+button{padding:10px 14px;border-radius:8px;border:none;background:#0f0;color:#000;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+
+<h1>Lobby</h1>
+<div>Sala: <span id="roomId"></span></div>
+<div>Vos: <span id="yourName"></span></div>
+
+<h2>Jugadores:</h2>
+<ul id="players"></ul>
+
+<button id="startBtn">Iniciar juego</button>
+
+<script>
+const params=new URLSearchParams(location.search);
+const roomId=params.get('id');
+const yourName=params.get('name');
+
+document.getElementById('roomId').textContent=roomId;
+document.getElementById('yourName').textContent=yourName;
+
+async function poll(){
+  const r=await fetch('/api/get-room?id='+roomId);
+  const j=await r.json();
+  if(!j.ok) return;
+
+  const room=j.room;
+  const ul=document.getElementById('players');
+  ul.innerHTML='';
+
+  room.players.forEach(p=>{
+    const li=document.createElement('li');
+    li.textContent=p;
+    ul.appendChild(li);
+  });
+
+  if(room.started){
+    const qs=new URLSearchParams();
+    qs.set('id', roomId);
+    qs.set('name', yourName);
+    window.location='cartas.html?'+qs.toString();
+  }
+}
+
+setInterval(poll,1000);
+poll();
+
+document.getElementById('startBtn').onclick = async () => {
+  const r=await fetch('/api/start-room',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      id:roomId,
+      hostName:yourName
+    })
+  });
+};
+</script>
+
+</body>
+</html>
