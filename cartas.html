@@ -1,1 +1,49 @@
+<!doctype html><html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tu carta</title>
+<style>
+body{background:#111;color:#fff;font-family:system-ui;padding:20px}
+.card{background:#222;padding:20px;border-radius:12px;text-align:center;font-size:22px}
+</style>
+</head>
+<body>
 
+<h1>Tu carta</h1>
+<div id="state">Cargando...</div>
+<div id="result"></div>
+
+<script>
+const params=new URLSearchParams(location.search);
+const roomId=params.get('id');
+const yourName=params.get('name');
+
+async function poll(){
+  const r=await fetch('/api/get-room?id='+roomId);
+  const j=await r.json();
+  if(!j.ok) return;
+
+  const room=j.room;
+
+  if(!room.started){
+    document.getElementById('state').textContent='Esperando inicio...';
+    return;
+  }
+
+  document.getElementById('state').textContent='Juego iniciado';
+
+  const impostor = room.players[room.impostorIndex];
+  const isImp = yourName === impostor;
+
+  document.getElementById('result').innerHTML =
+    `<div class="card">
+      ${isImp ? 'IMPOSTOR' : room.word}
+     </div>`;
+}
+
+setInterval(poll,1000);
+poll();
+</script>
+
+</body></html>
